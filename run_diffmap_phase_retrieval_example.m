@@ -24,8 +24,6 @@ subplot(1,3,3);
 imagescb(abs(f-recon),[0,maxval]);
 title(sprintf('Resid = %g, %g\n',resid));
 
-
-
 end
 
 function resid=compute_residual(f,ref)
@@ -50,6 +48,24 @@ if (opts.example_num==1)
         f=f+...
             exp(-(R.^2)/(rr/2)^2).*...
             (R.^2<=rr^2);
+    end;
+elseif (opts.example_num==2)
+    f=zeros(size(xx));
+    for kk=1:opts.num_disks
+        cc=(rand(3,1)*2-1)*0.7;
+        rr=(rand*2-1)*0.2;
+        if (N3b==1) cc(3)=0; end;
+        R=sqrt((xx-cc(1)).^2+(yy-cc(2)).^2+(zz-cc(3)).^2);
+        f=f+(R.^2<=rr^2);
+    end;
+elseif (opts.example_num==3)
+    f=zeros(size(xx));
+    for kk=1:opts.num_disks
+        cc=(rand(3,1)*2-1)*0.7;
+        rr=(rand*2-1)*0.2;
+        if (N3b==1) cc(3)=0; end;
+        R=sqrt((xx-cc(1)).^2+(yy-cc(2)).^2+(zz-cc(3)).^2);
+        f=f+exp(-(R.^2)/(rr/2)^2);
     end;
 end;
 end

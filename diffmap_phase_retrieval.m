@@ -4,22 +4,42 @@ if nargin<1
     return;
 end;
 
-initial_phase=zeros(size(u));
+if (~isfield(opts,'eps_hack')) opts.eps_hack=0; end;
+
+%initial_phase=zeros(size(u));
+initial_phase=rand(size(u))*2*pi;
 f0=real(ifft2b(u.*exp(i*initial_phase)));
 opts.u=u;
 info=struct;
 
+cmap='gray';
+
+figure; imagesc(rand(10,10)*2-1); set(gca,'clim',[-1,1]); colorbar; colormap(cmap);
+fA=figure; set(fA,'position',[100,100,2600,1300]);
 for it=1:opts.max_iterations
     %f1 = pi_A(2pi_B(f0)-f0) - pi_B(f0)
     if strcmp(opts.diffmap_method,'AB')
         pi_B_f0=pi_B(f0,opts);
         f1=f0+pi_A(2*pi_B_f0-f0,opts)-pi_B_f0;
+        eps0=opts.eps_hack;
+        f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
         f0=f1;
+        figure(fA);
+        subplot(1,2,1); imagesc(pi_B(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
+        subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]);  colormap(cmap);
     elseif strcmp(opts.diffmap_method,'BA')
         pi_A_f0=pi_A(f0,opts);
         f1=f0+pi_B(2*pi_A_f0-f0,opts)-pi_A_f0;
+        eps0=opts.eps_hack;
+        f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
         f0=f1;
+        figure(fA);
+        subplot(1,2,1); imagesc(pi_A(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
+        subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]); colormap(cmap);
     end;
+    
+    title(sprintf('iteration %d',it));
+    drawnow;
 end;
 
 if strcmp(opts.diffmap_method,'AB')
