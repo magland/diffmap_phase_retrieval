@@ -14,13 +14,18 @@ info=struct;
 
 cmap='gray';
 
-figure; imagesc(rand(10,10)*2-1); set(gca,'clim',[-1,1]); colorbar; colormap(cmap);
+%figure; imagesc(rand(10,10)*2-1); set(gca,'clim',[-1,1]); colorbar; colormap(cmap);
 fA=figure; set(fA,'position',[100,100,2600,1300]);
+fB=figure; set(fB,'position',[100,1500,300,300]);
+resids=[];
+tA=tic;
 for it=1:opts.max_iterations
     %f1 = pi_A(2pi_B(f0)-f0) - pi_B(f0)
     if strcmp(opts.diffmap_method,'AB')
         pi_B_f0=pi_B(f0,opts);
-        f1=f0+pi_A(2*pi_B_f0-f0,opts)-pi_B_f0;
+        proj1=pi_A(2*pi_B_f0-f0,opts);
+        proj2=pi_B_f0;
+        f1=f0+proj1-proj2;
         eps0=opts.eps_hack;
         f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
         f0=f1;
@@ -29,7 +34,9 @@ for it=1:opts.max_iterations
         subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]);  colormap(cmap);
     elseif strcmp(opts.diffmap_method,'BA')
         pi_A_f0=pi_A(f0,opts);
-        f1=f0+pi_B(2*pi_A_f0-f0,opts)-pi_A_f0;
+        proj1=pi_B(2*pi_A_f0-f0,opts);
+        proj2=pi_A_f0;
+        f1=f0+proj1-proj2;
         eps0=opts.eps_hack;
         f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
         f0=f1;
@@ -38,8 +45,15 @@ for it=1:opts.max_iterations
         subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]); colormap(cmap);
     end;
     
-    title(sprintf('iteration %d',it));
-    drawnow;
+    resid0=compute_residual(proj1,proj2);
+    title(sprintf('iteration %d - resid between pi_A and pi_B = %g',it,resid0));
+    resids(it)=resid0;
+    figure(fB);
+    semilogy(1:it,resids);
+    if (toc(tA)>0.3)
+        drawnow;
+        tA=tic;
+    end;
 end;
 
 if strcmp(opts.diffmap_method,'AB')
@@ -60,9 +74,42 @@ f1=opts.u.*exp(i*angle(f1));
 f1=real(ifft2b(f1));
 end
 
-function f1=pi_B(f0,opts)
-f1=f0.*(f0>=0);
+function f0=pi_B(f0,opts)
+if opts.positivity
+    f0=f0.*(f0>=0);
+end;
+if opts.support
+    f0=f0.*opts.support_mask;
+elseif opts.support2
+    if opts.positivity
+        mask0=find_optimal_mask(f0.*(f0>=0),opts.support_mask);
+    else
+        mask0=find_optimal_mask(f0,opts.support_mask);
+    end;
+    f0=f0.*mask0;
+end;
 end
+
+function mask0=find_optimal_mask(f,mask)
+
+tmp=abs(ifftn(fftn(abs(mask).^2).*conj(fftn(f))));
+[~,ind0]=max(tmp(:));
+[i1,i2]=ind2sub(size(tmp),ind0);
+
+mask0=circshift(circshift(mask,-i1,1),-i2,2);
+
+end
+
+
+% function f0=find_optimal_centered_image(f,mask)
+% 
+% tmp=abs(ifftn(fftn(abs(f).^2).*conj(fftn(mask))));
+% [~,ind0]=max(tmp(:));
+% [i1,i2]=ind2sub(size(tmp),ind0);
+% 
+% f0=circshift(circshift(f,-i1,1),-i2,2);
+% 
+% end
 
 function Y=fft2b(X)
 Y=fftshift(fft2(fftshift(X)));
@@ -133,6 +180,10 @@ A=best_A;
 % 
 % A2=real(ifft0(fft0(A).*exp(2*pi*i*(DX*GX/N1+DY*GY/N2+DZ*GZ/N3))));
 
+end
+
+function resid=compute_residual(f,ref)
+resid=sqrt(sum((f(:)-ref(:)).^2))/sqrt(sum(ref(:).^2));
 end
 
 function X=fracshift(X,dx,dy,dz)

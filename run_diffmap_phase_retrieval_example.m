@@ -4,10 +4,11 @@ if (nargin<1)
     return;
 end;
 
-f=create_example(example_opts);
+[f,support_mask]=create_example(example_opts);
 f_noise=f+randn(size(f))*example_opts.noise_level;
 u=abs(fft2b(f_noise));
 opts.reference=f;
+opts.support_mask=support_mask;
 
 recon=diffmap_phase_retrieval(u,opts);
 recon=real(ifft0(u.*exp(i*angle(fft0(recon))))); %enforce the magnitude constraint on the last step -- this makes the resid calculation fair
@@ -30,7 +31,7 @@ function resid=compute_residual(f,ref)
 resid=sqrt(sum((f(:)-ref(:)).^2))/sqrt(sum(ref(:).^2));
 end
 
-function f=create_example(opts)
+function [f,support_mask]=create_example(opts)
 oversamp=opts.oversamp;
 N1=opts.N1; N2=opts.N2; N3=1;
 
@@ -38,6 +39,7 @@ N1b=N1*oversamp;
 N2b=N2*oversamp;
 N3b=1;
 [xx,yy,zz]=ndgrid(linspace(-oversamp,oversamp,N1b),linspace(-oversamp,oversamp,N2b),0);
+support_mask=(abs(xx)<=1.1).*(abs(yy)<=1.1).*(abs(zz)<=1.2);
 if (opts.example_num==1)
     f=zeros(size(xx));
     for kk=1:opts.num_disks
@@ -67,7 +69,19 @@ elseif (opts.example_num==3)
         R=sqrt((xx-cc(1)).^2+(yy-cc(2)).^2+(zz-cc(3)).^2);
         f=f+exp(-(R.^2)/(rr/2)^2);
     end;
+elseif (opts.example_num==4)
+    f=zeros(size(xx));
+    for kk=1:opts.num_disks
+        cc=(rand(3,1)*2-1)*0.7;
+        rr=abs((rand*2-1)*0.2);
+        if (N3b==1) cc(3)=0; end;
+        R=sqrt((xx-cc(1)).^2+(yy-cc(2)).^2+(zz-cc(3)).^2);
+        k=opts.k;
+        f=f+(R/rr<1).*(1-(R/rr).^2).^k;
+    end;
 end;
+f=f.*support_mask;
+%support_mask=(abs(f)>1e-8);
 end
 
 function imagescb(X,range)
