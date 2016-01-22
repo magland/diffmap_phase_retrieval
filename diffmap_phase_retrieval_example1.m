@@ -39,6 +39,21 @@ end;
 
 % rng(rand_seed);
 % opts.diffmap_method='AB';
+% example_opts.noise_level=0;
+% run_diffmap_phase_retrieval_example(example_opts,opts);
+% set(gcf,'name',sprintf('Method %s, Noise level %g',opts.diffmap_method,example_opts.noise_level));
+% pause(0.1);
+% 
+% rng(rand_seed);
+% opts.diffmap_method='BA';
+% example_opts.noise_level=0;
+% run_diffmap_phase_retrieval_example(example_opts,opts);
+% set(gcf,'name',sprintf('Method %s, Noise level %g',opts.diffmap_method,example_opts.noise_level));
+% pause(0.1);
+% 
+
+% rng(rand_seed);
+% opts.diffmap_method='AB';
 % opts.eps_hack=0.01;
 % example_opts.noise_level=0;
 % run_diffmap_phase_retrieval_example(example_opts,opts);
