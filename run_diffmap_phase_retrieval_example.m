@@ -79,6 +79,8 @@ elseif (opts.example_num==4)
         k=opts.k;
         f=f+(R/rr<1).*(1-(R/rr).^2).^k;
     end;
+    f=f+1;
+    f=f/max(f(:));
 end;
 f=f.*support_mask;
 %support_mask=(abs(f)>1e-8);

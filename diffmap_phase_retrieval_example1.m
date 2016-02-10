@@ -2,11 +2,11 @@ function diffmap_phase_retrieval_example1
 
 %close all;
 
-opts.max_iterations=5000;
+opts.max_iterations=2000;
 example_opts.example_num=4;
 example_opts.num_disks=50;
-example_opts.N1=16;
-example_opts.N2=16;
+example_opts.N1=128;
+example_opts.N2=128;
 example_opts.oversamp=2;
 example_opts.k=2;
 
@@ -15,9 +15,9 @@ rand_seed=5;
 
 if 1
 rng(rand_seed);
-opts.diffmap_method='AB';
-opts.positivity=1;
-opts.support=0;
+opts.diffmap_method='BA_HIO';
+opts.positivity=0;
+opts.support=1;
 opts.support2=0;
 example_opts.noise_level=0;
 run_diffmap_phase_retrieval_example(example_opts,opts);

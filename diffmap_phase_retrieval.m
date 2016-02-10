@@ -39,6 +39,21 @@ for it=1:opts.max_iterations
         figure(fA);
         subplot(1,1,1); imagesc(pi_B(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
         %subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]);  colormap(cmap);
+    elseif strcmp(opts.diffmap_method,'AB_HIO')
+        pi_B_f0=pi_B(f0,opts);
+        %beta=min(1,0.5+0.5*it/(opts.max_iterations*0.9));
+        beta=0.5;
+        proj1=pi_A((1+beta)*pi_B_f0-f0,opts);
+        proj2=pi_B_f0;
+        f1=f0+proj1-beta*proj2;
+        eps0=opts.eps_hack;
+        f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
+        f0=f1;
+        tmp=f0.*opts.support_mask;
+        if mean(tmp(:)<0), f0=-f0; end;
+        figure(fA);
+        subplot(1,1,1); imagesc(pi_B(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
+        %subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]); colormap(cmap);
     elseif strcmp(opts.diffmap_method,'BA')
         pi_A_f0=pi_A(f0,opts);
         proj1=pi_B(2*pi_A_f0-f0,opts);
@@ -50,6 +65,21 @@ for it=1:opts.max_iterations
         figure(fA);
         subplot(1,1,1); imagesc(pi_A(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
         %subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]); colormap(cmap);
+    elseif strcmp(opts.diffmap_method,'BA_HIO')
+        pi_A_f0=pi_A(f0,opts);
+        %beta=min(1,0.5+0.5*it/(opts.max_iterations*0.9));
+        beta=0.5;
+        proj1=pi_B((1+beta)*pi_A_f0-f0,opts);
+        proj2=pi_A_f0;
+        f1=f0+proj1-beta*proj2;
+        eps0=opts.eps_hack;
+        f1=(abs(f1)<eps0).*(eps0*sign(f1))+(abs(f1)>=eps0).*f1;
+        f0=f1;
+        tmp=f0.*opts.support_mask;
+        if mean(tmp(:)<0), f0=-f0; end;
+        figure(fA);
+        subplot(1,1,1); imagesc(pi_A(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
+        %subplot(1,2,2); imagesc(f0); set(gca,'clim',[-1,1]); colormap(cmap);
     elseif strcmp(opts.diffmap_method,'AP')
         pi_A_f0=pi_A(f0,opts);
         f1=pi_B(pi_A_f0,opts);
@@ -58,13 +88,24 @@ for it=1:opts.max_iterations
         f0=f1;
         figure(fA);
         subplot(1,1,1); imagesc(pi_A(f0,opts)); set(gca,'clim',[-1,1]);  colormap(cmap);
+    elseif strcmp(opts.diffmap_method,'HIO')
+        pi_A_f0=pi_A(f0,opts);
+        beta=0.5;
+        f1=pi_A_f0.*opts.support_mask + (f0-beta*pi_A_f0).*(1-opts.support_mask);
+        f0=f1;
+        tmp=f0.*opts.support_mask;
+        if mean(tmp(:)<0), f0=-f0; end;
+        figure(fA);
+        subplot(1,1,1); imagesc(f0); set(gca,'clim',[-1,1]);  colormap(cmap);
     end;
     
-    resid0=compute_residual(proj1,proj2);
-    title(sprintf('iteration %d - resid between pi_A and pi_B = %g',it,resid0));
-    resids(it)=resid0;
-    figure(fB);
-    semilogy(1:it,resids);
+    if ~strcmp(opts.diffmap_method,'HIO')
+        resid0=compute_residual(proj1,proj2);
+        title(sprintf('iteration %d - resid between pi_A and pi_B = %g',it,resid0));
+        resids(it)=resid0;
+        figure(fB);
+        semilogy(1:it,resids);
+    end;
     if (toc(tA)>0.3)
         drawnow;
         tA=tic;
@@ -73,7 +114,11 @@ end;
 
 if strcmp(opts.diffmap_method,'AB')
     recon=pi_B(f0,opts);
+elseif strcmp(opts.diffmap_method,'AB_HIO')
+    recon=pi_B(f0,opts);
 elseif strcmp(opts.diffmap_method,'BA')
+    recon=pi_A(f0,opts);
+elseif strcmp(opts.diffmap_method,'BA_HIO')
     recon=pi_A(f0,opts);
 elseif strcmp(opts.diffmap_method,'AP')
     recon=pi_A(f0,opts);
